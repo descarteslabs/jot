@@ -1,1 +1,1 @@
-from .jot import Jot
+from .telemeter import Telemeter

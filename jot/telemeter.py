@@ -4,7 +4,7 @@ from . import log
 from .base import Target
 
 
-class Jot:
+class Telemeter:
     """The instrumentation interface"""
 
     def __init__(self, target=None, span=None, *tagdicts) -> None:
@@ -31,7 +31,7 @@ class Jot:
     def start(self, name, *tagdicts):
         tags = self._merge(tagdicts)
         span = self.target.start(self.span, name)
-        return Jot(self.target, span, tags)
+        return Telemeter(self.target, span, tags)
 
     def finish(self, *tagdicts):
         self.span.finish()

@@ -1,5 +1,5 @@
 import pytest
-from jot import Jot, log
+from jot import Telemeter, log
 from jot.base import Span, Target
 from jot.print import PrintTarget
 
@@ -9,11 +9,11 @@ EXPECTED_TAGS = {"plonk": 42, "nork": 96}
 @pytest.fixture
 def jot():
     target = Target(log.ALL)
-    return Jot(target, None, {"plonk": 42})
+    return Telemeter(target, None, {"plonk": 42})
 
 
 def test_default_constructor():
-    jot = Jot()
+    jot = Telemeter()
     assert isinstance(jot.target, Target)
     assert isinstance(jot.span, Span)
     assert isinstance(jot.tags, dict)
@@ -21,20 +21,20 @@ def test_default_constructor():
 
 def test_target_constructor():
     target = PrintTarget()
-    jot = Jot(target)
+    jot = Telemeter(target)
     assert jot.target is target
     assert isinstance(jot.span, Span)
 
 
 def test_span_constructor():
     span = Span(1, 2, 3)
-    jot = Jot(None, span)
+    jot = Telemeter(None, span)
     assert isinstance(jot.target, Target)
     assert jot.span is span
 
 
 def test_tags_constructor():
-    jot = Jot(None, None, {"plonk": 42}, {"nork": 96})
+    jot = Telemeter(None, None, {"plonk": 42}, {"nork": 96})
     assert jot.tags["plonk"] == 42
     assert jot.tags["nork"] == 96
 
@@ -78,7 +78,7 @@ def test_warning(jot, mocker):
 
 def test_ignored_debug(mocker):
     target = Target(log.NOTHING)
-    jot = Jot(target)
+    jot = Telemeter(target)
     spy = mocker.spy(jot.target, "log")
     jot.debug("test log message", {"nork": 96})
     spy.assert_not_called()
@@ -86,7 +86,7 @@ def test_ignored_debug(mocker):
 
 def test_ignored_info(mocker):
     target = Target(log.NOTHING)
-    jot = Jot(target)
+    jot = Telemeter(target)
     spy = mocker.spy(jot.target, "log")
     jot.info("test log message", {"nork": 96})
     spy.assert_not_called()
@@ -94,7 +94,7 @@ def test_ignored_info(mocker):
 
 def test_ignored_warning(mocker):
     target = Target(log.NOTHING)
-    jot = Jot(target)
+    jot = Telemeter(target)
     spy = mocker.spy(jot.target, "log")
     jot.warning("test log message", {"nork": 96})
     spy.assert_not_called()
