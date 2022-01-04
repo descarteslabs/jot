@@ -1,5 +1,5 @@
-import json
 import os
+import traceback
 from time import time_ns
 
 import requests
@@ -34,8 +34,13 @@ class ZipkinTarget(Target):
         return ZipkinSpan(trace_id, parent_id, id, name)
 
     def _send(self, payload):
-       response = self.session.post(self.url, json=payload)
-       response.raise_for_status()
+        try:
+            response = self.session.post(self.url, json=payload)
+            response.raise_for_status()
+        except Exception:
+            # TODO: implement a better error handling mechanism
+            print(traceback.format_exc())
+
 
     def finish(self, span, tags):
         payload = {
