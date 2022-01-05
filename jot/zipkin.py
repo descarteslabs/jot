@@ -42,7 +42,7 @@ class ZipkinTarget(Target):
             print(traceback.format_exc())
 
 
-    def finish(self, span, tags):
+    def finish(self, tags, span):
         payload = {
             "traceId": span.trace_id,
             "id": span.id,
@@ -65,8 +65,9 @@ class ZipkinTarget(Target):
 
         self._send(payload)
 
-    def event(self, span, name, tags):
-        span.attributes.append(ZipkinAttribute(name))
+    def event(self, name, tags, span=None):
+        if span is not None:
+            span.attributes.append(ZipkinAttribute(name))
 
 
 def _set_attr(payload, name, value):

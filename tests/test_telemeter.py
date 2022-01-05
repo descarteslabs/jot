@@ -55,25 +55,26 @@ def test_finish(jot, mocker):
     jot.finish({"nork": 96})
 
     sspy.assert_called_once_with()
-    tspy.assert_called_once_with(jot.span, {"plonk": 42, "nork": 96})
+    print(tspy.call_args)
+    tspy.assert_called_once_with({"plonk": 42, "nork": 96}, jot.span)
 
 
 def test_debug(jot, mocker):
     spy = mocker.spy(jot.target, "log")
     jot.debug("test log message", {"nork": 96})
-    spy.assert_called_once_with(jot.span, log.DEBUG, "test log message", EXPECTED_TAGS)
+    spy.assert_called_once_with(log.DEBUG, "test log message", EXPECTED_TAGS, jot.span)
 
 
 def test_info(jot, mocker):
     spy = mocker.spy(jot.target, "log")
     jot.info("test log message", {"nork": 96})
-    spy.assert_called_once_with(jot.span, log.INFO, "test log message", EXPECTED_TAGS)
+    spy.assert_called_once_with(log.INFO, "test log message", EXPECTED_TAGS, jot.span)
 
 
 def test_warning(jot, mocker):
     spy = mocker.spy(jot.target, "log")
     jot.warning("test log message", {"nork": 96})
-    spy.assert_called_once_with(jot.span, log.WARNING, "test log message", EXPECTED_TAGS)
+    spy.assert_called_once_with(log.WARNING, "test log message", EXPECTED_TAGS, jot.span)
 
 
 def test_ignored_debug(mocker):
@@ -106,19 +107,19 @@ def test_error(jot, mocker):
         4 / 0
     except ZeroDivisionError as e:
         jot.error("caught test error", e, {"nork": 96})
-        spy.assert_called_once_with(jot.span, "caught test error", e, EXPECTED_TAGS)
+        spy.assert_called_once_with("caught test error", e, EXPECTED_TAGS, jot.span)
 
 
 def test_magnitude(jot, mocker):
     spy = mocker.spy(jot.target, "magnitude")
     jot.magnitude("zishy", 105, {"nork": 96})
-    spy.assert_called_once_with(jot.span, "zishy", 105, EXPECTED_TAGS)
+    spy.assert_called_once_with("zishy", 105, EXPECTED_TAGS, jot.span)
 
 
 def test_count(jot, mocker):
     spy = mocker.spy(jot.target, "count")
     jot.count("zishy", 105, {"nork": 96})
-    spy.assert_called_once_with(jot.span, "zishy", 105, EXPECTED_TAGS)
+    spy.assert_called_once_with("zishy", 105, EXPECTED_TAGS, jot.span)
 
 
 def test_with_span(jot, mocker):
@@ -136,4 +137,4 @@ def test_with_span(jot, mocker):
         tspy = mocker.spy(jot.target, "finish")
 
     sspy.assert_called_once_with()
-    tspy.assert_called_once_with(cspan, {"plonk": 42, "nork": 96})
+    tspy.assert_called_once_with({"plonk": 42, "nork": 96}, cspan)

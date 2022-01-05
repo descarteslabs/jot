@@ -62,20 +62,20 @@ class Target:
         id = self._gen_id()
         return self.span(trace_id, parent_id, id, name)
 
-    def finish(self, span, tags):
+    def finish(self, tags, span):
         pass
 
-    def event(self, span, name, tags):
+    def event(self, name, tags, span=None):
         pass
 
-    def log(self, span, level, message, tags):
+    def log(self, level, message, tags, span=None):
         pass
 
-    def error(self, span, message, exception, tags):
+    def error(self, message, exception, tags, span=None):
         pass
 
-    def magnitude(self, span, name, value, tags):
+    def magnitude(self, name, value, tags, span=None):
         pass
 
-    def count(self, span, name, value, tags):
+    def count(self, name, value, tags, span=None):
         pass

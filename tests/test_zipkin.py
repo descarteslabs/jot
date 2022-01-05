@@ -44,7 +44,7 @@ def test_finish(requests_mock):
     target = ZipkinTarget("http://example.com/post")
     root = target.start()
     span = target.start(root, "test-span")
-    target.event(span, "an event", {})
+    target.event("an event", {}, span)
     tags = {
         "pluff": 667,
         "kind": "CLIENT",
@@ -56,5 +56,5 @@ def test_finish(requests_mock):
     }
 
     requests_mock.post(target.url, status_code=202)
-    target.finish(span, tags)
+    target.finish(tags, span)
     assert requests_mock.called

@@ -36,43 +36,43 @@ class Telemeter:
     def finish(self, *tagdicts):
         self.span.finish()
         tags = self._merge(tagdicts)
-        self.target.finish(self.span, tags)
+        self.target.finish(tags, self.span)
 
     def event(self, name, *tagdicts):
         tags = self._merge(tagdicts)
-        self.target.event(self.span, name, tags)
+        self.target.event(name, tags, self.span)
 
     """Logging methods"""
 
     def debug(self, message, *tagdicts):
         if self.target.accepts_log_level(log.DEBUG):
             tags = self._merge(tagdicts)
-            self.target.log(self.span, log.DEBUG, message, tags)
+            self.target.log(log.DEBUG, message, tags, self.span)
 
     def info(self, message, *tagdicts):
         if self.target.accepts_log_level(log.INFO):
             tags = self._merge(tagdicts)
-            self.target.log(self.span, log.INFO, message, tags)
+            self.target.log(log.INFO, message, tags, self.span)
 
     def warning(self, message, *tagdicts):
         if self.target.accepts_log_level(log.WARNING):
             tags = self._merge(tagdicts)
-            self.target.log(self.span, log.WARNING, message, tags)
+            self.target.log(log.WARNING, message, tags, self.span)
 
     """Error methods"""
 
     def error(self, message, exception, *tagdicts):
         tags = self._merge(tagdicts)
-        self.target.error(self.span, message, exception, tags)
+        self.target.error(message, exception, tags, self.span)
 
     """Metrics methods"""
 
     def magnitude(self, name, value, *tagdicts):
         # TODO: check that value is a number
         tags = self._merge(tagdicts)
-        self.target.magnitude(self.span, name, value, tags)
+        self.target.magnitude(name, value, tags, self.span)
 
     def count(self, name, value, *tagdicts):
         # TODO: check that value is an integer
         tags = self._merge(tagdicts)
-        self.target.count(self.span, name, value, tags)
+        self.target.count(name, value, tags, self.span)

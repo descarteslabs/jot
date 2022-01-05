@@ -85,11 +85,11 @@ def test_with_error(mocker):
     with jot.span("child", {"nork": 6}):
         1 / 0
     spy.assert_called_once()
-    assert isinstance(spy.call_args.args[0], Span)
-    assert spy.call_args.args[0].parent_id == jot.active.span.id
-    assert spy.call_args.args[1] == "Error during child"
-    assert isinstance(spy.call_args.args[2], ZeroDivisionError)
-    assert spy.call_args.args[3]["nork"] == 6
+    assert spy.call_args.args[0] == "Error during child"
+    assert isinstance(spy.call_args.args[1], ZeroDivisionError)
+    assert spy.call_args.args[2]["nork"] == 6
+    assert isinstance(spy.call_args.args[3], Span)
+    assert spy.call_args.args[3].parent_id == jot.active.span.id
 
 
 def test_event(assert_forwards):
