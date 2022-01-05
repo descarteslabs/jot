@@ -60,6 +60,26 @@ def test_with():
     assert jot.active is parent
 
 
+def test_with_trace_id():
+    parent = jot.active
+    with jot.span("child", trace_id=51) as child:
+        assert child is jot.active
+        assert child is not parent
+        assert child.span.trace_id == 51
+        assert child.span.parent_id is None
+        assert type(child.span.id) is int
+        assert child.span.name == "name"
+
+
+def test_with_parent_id():
+    with jot.span("child", trace_id=51, parent_id=66) as child:
+        assert child is jot.active
+        assert child.span.trace_id == 51
+        assert child.span.parent_id == 66
+        assert type(child.span.id) is int
+        assert child.span.name == "child"
+
+
 def test_with_error(mocker):
     spy = mocker.spy(jot.active.target, "error")
     with jot.span("child", {"nork": 6}):

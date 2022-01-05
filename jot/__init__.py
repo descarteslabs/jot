@@ -61,9 +61,14 @@ def count(name, value, *tagdicts):
 
 
 @_contextmanager
-def span(name, *tagdicts):
-    child = active.start(name, *tagdicts)
+def span(name, *tagdicts, trace_id=None, parent_id=None):
+    if trace_id is None:
+        child = active.start(name, *tagdicts) 
+    else:
+        span = active.target.span(trace_id=trace_id, parent_id=parent_id, name=name)
+        child = Telemeter(active.target, span, *tagdicts)
     _push(child)
+
     try:
         yield child
     except Exception as exc:

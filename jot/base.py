@@ -39,10 +39,18 @@ class Target:
         cls._next_id += 1
         return id
 
+    @classmethod
+    def _gen_trace_id(cls):
+        return cls._gen_id()
+
+    @classmethod
+    def _gen_span_id(cls):
+        return cls._gen_id()
+
     def __init__(self, level=log.WARNING):
         self.level = level
 
-    def _start(self, trace_id, parent_id, id, name):
+    def span(self, trace_id=None, parent_id=None, id=None, name=None):
         return Span(trace_id, parent_id, id, name)
 
     def accepts_log_level(self, level):
@@ -52,7 +60,7 @@ class Target:
         trace_id = parent.trace_id if parent is not None else self._gen_id()
         parent_id = parent.id if parent is not None else None
         id = self._gen_id()
-        return self._start(trace_id, parent_id, id, name)
+        return self.span(trace_id, parent_id, id, name)
 
     def finish(self, span, tags):
         pass

@@ -30,7 +30,7 @@ class ZipkinTarget(Target):
         self.url = url
         self.session = requests.Session()
 
-    def _start(self, trace_id, parent_id, id, name):
+    def span(self, trace_id, parent_id, id, name):
         return ZipkinSpan(trace_id, parent_id, id, name)
 
     def _send(self, payload):
