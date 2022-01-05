@@ -9,7 +9,7 @@ class Telemeter:
 
     def __init__(self, target=None, span=None, *tagdicts) -> None:
         self.target = target if target is not None else Target()
-        self.span = span if span is not None else self.target.start()
+        self.span = span
         self.tags = dict()
         for tags in tagdicts:
             self.tags.update(tags)

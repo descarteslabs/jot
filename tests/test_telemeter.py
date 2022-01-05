@@ -9,13 +9,14 @@ EXPECTED_TAGS = {"plonk": 42, "nork": 96}
 @pytest.fixture
 def jot():
     target = Target(log.ALL)
-    return Telemeter(target, None, {"plonk": 42})
+    span = target.start()
+    return Telemeter(target, span, {"plonk": 42})
 
 
 def test_default_constructor():
     jot = Telemeter()
     assert isinstance(jot.target, Target)
-    assert isinstance(jot.span, Span)
+    assert jot.span is None
     assert isinstance(jot.tags, dict)
 
 
@@ -23,7 +24,7 @@ def test_target_constructor():
     target = PrintTarget()
     jot = Telemeter(target)
     assert jot.target is target
-    assert isinstance(jot.span, Span)
+    assert jot.span is None
 
 
 def test_span_constructor():

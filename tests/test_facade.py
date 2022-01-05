@@ -31,16 +31,19 @@ def test_init():
     jot.init(target, LOOZY)
     assert jot.active.target is target
     assert jot.active.tags == LOOZY
+    assert jot.active.span is None
 
 
 def test_start():
+    jot.init(Target(), LOOZY)
     parent = jot.active
     jot.start("child", {"nork": 91})
 
     assert jot.active is not parent
     assert jot.active.tags["nork"] == 91
-    assert jot.active.span.parent_id == parent.span.id
-
+    assert type(jot.active.span.trace_id) is int
+    assert type(jot.active.span.id) is int
+    assert jot.active.span.name == "child"
 
 def test_finish():
     parent = jot.active
