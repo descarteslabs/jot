@@ -36,7 +36,9 @@ class ZipkinTarget(Target):
     def _send(self, payload):
         try:
             response = self.session.post(self.url, json=payload)
-            response.raise_for_status()
+            if response.status_code > 299:
+                print(f"Zipkin response status code: {response.status_code}")
+                print(response.text)
         except Exception:
             # TODO: implement a better error handling mechanism
             print(traceback.format_exc())
