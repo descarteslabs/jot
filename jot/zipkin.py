@@ -45,26 +45,27 @@ class ZipkinTarget(Target):
 
 
     def finish(self, tags, span):
-        payload = {
+        obj = {
             "traceId": span.trace_id,
             "id": span.id,
             "timestamp": span.start_time // 1000,
             "duration": span.duration,
         }
 
-        _set_attr(payload, "parentId", span.parent_id)
-        _set_attr(payload, "name", span.name)
+        _set_attr(obj, "parentId", span.parent_id)
+        _set_attr(obj, "name", span.name)
 
-        _set_tag(payload, tags, "kind")
-        _set_tag(payload, tags, "shared")
-        _set_tag(payload, tags, "localEndpoint")
-        _set_tag(payload, tags, "remoteEndpoint")
-        payload["tags"] = tags
+        _set_tag(obj, tags, "kind")
+        _set_tag(obj, tags, "shared")
+        _set_tag(obj, tags, "localEndpoint")
+        _set_tag(obj, tags, "remoteEndpoint")
+        obj["tags"] = tags
 
         annotations = [{"timestamp": a.timestamp, "value": a.value} for a in span.attributes]
         if len(annotations) > 0:
-            payload["annotations"] = annotations
+            obj["annotations"] = annotations
 
+        payload = [obj]
         self._send(payload)
 
     def event(self, name, tags, span=None):
