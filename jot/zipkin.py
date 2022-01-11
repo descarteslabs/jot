@@ -1,6 +1,7 @@
 import os
 import traceback
 from time import time_ns
+import json
 
 import requests
 
@@ -34,6 +35,10 @@ class ZipkinTarget(Target):
         return ZipkinSpan(trace_id, parent_id, id, name)
 
     def _send(self, payload):
+
+        # FIXME: remove debugging code
+        print(json.dumps(payload))
+
         try:
             response = self.session.post(self.url, json=payload)
             if response.status_code > 299:
