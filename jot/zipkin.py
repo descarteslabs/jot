@@ -52,12 +52,12 @@ class ZipkinTarget(Target):
     def finish(self, tags, span):
         obj = {
             "traceId": span.trace_id,
+            "parentId": span.parent_id,
             "id": span.id,
             "timestamp": span.start_time // 1000,
             "duration": span.duration,
         }
 
-        _set_attr(obj, "parentId", span.parent_id)
         _set_attr(obj, "name", span.name)
 
         _set_tag(obj, tags, "kind")

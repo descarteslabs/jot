@@ -92,6 +92,19 @@ def test_finish(requests_mock):
         "traceId",
     ]
 
+def test_root_span(requests_mock):
+    target = ZipkinTarget("http://example.com/post")
+    root = target.start()
+
+    requests_mock.post(target.url, status_code=202)
+    target.finish({}, root)
+    assert requests_mock.called_once
+
+    span = json.loads(requests_mock.last_request.text)[0]
+    assert "parentId" in span
+    assert span["parentId"] is None
+    
+    
 
 def assert_is_id(obj, name):
     assert name in obj
