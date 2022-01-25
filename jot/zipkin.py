@@ -23,6 +23,8 @@ class ZipkinSpan(Span):
 class ZipkinTarget(Target):
     """A target that sends traces to a zipkin server"""
 
+    _span_class = ZipkinSpan
+
     @classmethod
     def _gen_id(cls):
         return os.urandom(8).hex()
@@ -30,9 +32,6 @@ class ZipkinTarget(Target):
     def __init__(self, url):
         self.url = url
         self.session = requests.Session()
-
-    def span(self, trace_id, parent_id, id, name):
-        return ZipkinSpan(trace_id, parent_id, id, name)
 
     def _send(self, payload):
 
@@ -47,7 +46,6 @@ class ZipkinTarget(Target):
         except Exception:
             # TODO: implement a better error handling mechanism
             print(traceback.format_exc())
-
 
     def finish(self, tags, span):
         obj = {

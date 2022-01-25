@@ -16,7 +16,7 @@ class PrintTarget(Target):
 
     @staticmethod
     def _write(span, tags=None, *chunks):
-        stderr.write(f"[{_now()}]")
+        stderr.write(f"[{span.id}/{_now()}] ")
         if type(tags) == dict:
             for k, v in tags.items():
                 stderr.write(f" {k}={v}")
@@ -25,6 +25,11 @@ class PrintTarget(Target):
         for c in chunks:
             stderr.write(f" {c}")
         stderr.write("\n")
+
+    def start(self, parent=None, name=None):
+        span = super().start(parent, name)
+        self._write(span, {}, "start", name)
+        return span
 
     def finish(self, tags, span):
         tags["duration"] = span.duration
@@ -39,7 +44,7 @@ class PrintTarget(Target):
 
     def error(self, message, exception, tags, span=None):
         self._write(span, tags, "Error:", message)
-        print_exception(exception)
+        print(exception)
 
     def magnitude(self, name, value, tags, span=None):
         self._write(span, tags, f"{name}={value}")

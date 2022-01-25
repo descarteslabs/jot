@@ -32,6 +32,7 @@ class Target:
     """A target that ignores all telemetry"""
 
     _next_id = 1
+    _span_class = Span
 
     @classmethod
     def _gen_id(cls):
@@ -50,11 +51,13 @@ class Target:
     def __init__(self, level=log.WARNING):
         self.level = level
 
-    def span(self, trace_id=None, parent_id=None, id=None, name=None):
-        return Span(trace_id, parent_id, id, name)
-
     def accepts_log_level(self, level):
         return level <= self.level
+
+    def span(self, trace_id=None, parent_id=None, id=None, name=None):
+        trace_id = self._gen_id() if trace_id is None else trace_id
+        id = self._gen_id() if id is None else id
+        return self._span_class(trace_id, parent_id, id, name)
 
     def start(self, parent=None, name=None):
         trace_id = parent.trace_id if parent is not None else self._gen_id()

@@ -1,7 +1,11 @@
+from decimal import DivisionByZero
+from itsdangerous import exc
 import jot
 import pytest
 from jot.base import Span, Target
 from jot.telemeter import Telemeter
+from jot import log
+from jot.print import PrintTarget
 
 LOOZY = {"loozy": 34}
 
@@ -20,6 +24,20 @@ def assert_forwards(mocker):
         spy.assert_called_once_with(*args)
 
     return _assert_forwards
+
+
+@pytest.fixture(autouse=True)
+def init():
+    jot.init(Target(level=log.ALL))
+    jot.start("test", {"ctx": 1})
+
+
+@jot.generator("async", {"ctx": 2})
+def generator():
+    for i in range(0, 2):
+        jot.info("before")
+        yield i
+        jot.info("after")
 
 
 def test_active():
@@ -44,6 +62,7 @@ def test_start():
     assert type(jot.active.span.trace_id) is int
     assert type(jot.active.span.id) is int
     assert jot.active.span.name == "child"
+
 
 def test_finish():
     parent = jot.active
@@ -71,7 +90,7 @@ def test_with_trace_id():
         assert child.span.trace_id == 51
         assert child.span.parent_id is None
         assert type(child.span.id) is int
-        assert child.span.name == "name"
+        assert child.span.name == "child"
 
 
 def test_with_parent_id():
@@ -85,9 +104,15 @@ def test_with_parent_id():
 
 def test_with_error(mocker):
     spy = mocker.spy(jot.active.target, "error")
-    with jot.span("child", {"nork": 6}):
-        1 / 0
+
+    try:
+        with jot.span("child", {"nork": 6}):
+            1 / 0
+    except ZeroDivisionError:
+        pass
+
     spy.assert_called_once()
+    print(spy.call_args.args)
     assert spy.call_args.args[0] == "Error during child"
     assert isinstance(spy.call_args.args[1], ZeroDivisionError)
     assert spy.call_args.args[2]["nork"] == 6
@@ -124,3 +149,89 @@ def test_magnitude(assert_forwards):
 
 def test_count(assert_forwards):
     assert_forwards("count", "requests", 99, LOOZY)
+
+
+def test_generator(mocker):
+    spy = mocker.spy(jot.active.target, "log")
+
+    with jot.span("create", {"ctx": 3}):
+        it = generator()
+
+    with jot.span("iterate", {"ctx": 4}):
+        for i in it:
+            jot.info("during", {"i": i})
+        jot.info("done")
+
+    for c in spy.mock.mock_calls:
+        msg = c.args[1]
+        ctx = c.args[2]["ctx"]
+        if msg == "before":
+            assert ctx == 2
+        elif msg == "during":
+            assert ctx == 4
+        elif msg == "after":
+            assert ctx == 2
+        elif msg == "done":
+            assert ctx == 4
+        else:
+            raise AssertionError("Unexpected log message")
+
+
+def test_generator_dynamic_tags(mocker):
+    spy = mocker.spy(jot.active.target, "log")
+
+    with jot.span("create", {"ctx": 3}):
+        tags = {"dynamic": True}
+        it = generator(jot_tags=tags)
+
+    for i in it:
+        jot.info("during", {"i": i})
+
+    for c in spy.mock.mock_calls:
+        msg = c.args[1]
+        if msg == "before":
+            assert "dynamic" in c.args[2]
+        elif msg == "during":
+            assert "dynamic" not in c.args[2]
+
+
+@pytest.mark.skip("No implemented yet")
+def test_coroutine(mocker):
+    spy = mocker.spy(jot.active.target, "log")
+    jot.start("outer", {"ctx": 1})
+
+    @jot.coroutine("async", {"ctx": 2})
+    def coroutine():
+        try:
+            while True:
+                val = yield
+                jot.info("during", {"val": val})
+        except GeneratorExit:
+            jot.info("done")
+
+    with jot.span("create", {"ctx": 3}):
+        g = coroutine()
+
+    with jot.span("sync", {"ctx": 4}):
+        next(g)
+        for i in range(0, 2):
+            jot.info("before", {"i": i})
+            g.send(i)
+            jot.info("after", {"i": i})
+        g.close()
+
+    jot.finish()
+
+    for c in spy.mock.mock_calls:
+        msg = c.args[1]
+        ctx = c.args[2].get("ctx")
+        val = c.args[2].get("val")
+        if msg == "before":
+            assert ctx == 4
+        elif msg == "during":
+            assert ctx == 2
+            assert type(val) is int
+        elif msg == "after":
+            assert ctx == 4
+        elif msg == "done":
+            assert ctx == 4
