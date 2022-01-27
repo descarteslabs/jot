@@ -19,16 +19,6 @@ def _pop():
     global active
     active = _stack.pop()
 
-
-def _create_child(name, tags, trace_id=None, parent_id=None):
-    if trace_id is None:
-        child = active.start(name, **tags)
-    else:
-        span = active.target.span(trace_id=trace_id, parent_id=parent_id, name=name)
-        child = Telemeter(active.target, span, **tags)
-    return child
-
-
 def init(target, **tags):
     global active, _stack
     active = Telemeter(target, None, **tags)
@@ -75,7 +65,11 @@ def count(name, value, **tags):
 
 @_contextmanager
 def span(name, trace_id=None, parent_id=None, **tags):
-    child = _create_child(name, tags, trace_id, parent_id)
+    if trace_id is None:
+        child = active.start(name, **tags)
+    else:
+        span = active.target.span(trace_id=trace_id, parent_id=parent_id, name=name)
+        child = Telemeter(active.target, span, **tags)
     _push(child)
 
     try:
