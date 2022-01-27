@@ -10,7 +10,7 @@ EXPECTED_TAGS = {"plonk": 42, "nork": 96}
 def jot():
     target = Target(log.ALL)
     span = target.start()
-    return Telemeter(target, span, {"plonk": 42})
+    return Telemeter(target, span, plonk=42)
 
 
 def test_default_constructor():
@@ -35,13 +35,13 @@ def test_span_constructor():
 
 
 def test_tags_constructor():
-    jot = Telemeter(None, None, {"plonk": 42}, {"nork": 96})
+    jot = Telemeter(None, None, plonk=42, nork=96)
     assert jot.tags["plonk"] == 42
     assert jot.tags["nork"] == 96
 
 
 def test_start(jot):
-    child = jot.start("subtask", {"nork": 96})
+    child = jot.start("subtask", nork=96)
     assert len(jot.tags) == 1
     assert child.target is jot.target
     assert child.span is not jot.span
@@ -53,7 +53,7 @@ def test_finish(jot, mocker):
     sspy = mocker.spy(jot.span, "finish")
     tspy = mocker.spy(jot.target, "finish")
 
-    jot.finish({"nork": 96})
+    jot.finish(nork=96)
 
     sspy.assert_called_once_with()
     print(tspy.call_args)
@@ -62,19 +62,19 @@ def test_finish(jot, mocker):
 
 def test_debug(jot, mocker):
     spy = mocker.spy(jot.target, "log")
-    jot.debug("test log message", {"nork": 96})
+    jot.debug("test log message", nork=96)
     spy.assert_called_once_with(log.DEBUG, "test log message", EXPECTED_TAGS, jot.span)
 
 
 def test_info(jot, mocker):
     spy = mocker.spy(jot.target, "log")
-    jot.info("test log message", {"nork": 96})
+    jot.info("test log message", nork=96)
     spy.assert_called_once_with(log.INFO, "test log message", EXPECTED_TAGS, jot.span)
 
 
 def test_warning(jot, mocker):
     spy = mocker.spy(jot.target, "log")
-    jot.warning("test log message", {"nork": 96})
+    jot.warning("test log message", nork=96)
     spy.assert_called_once_with(log.WARNING, "test log message", EXPECTED_TAGS, jot.span)
 
 
@@ -82,7 +82,7 @@ def test_ignored_debug(mocker):
     target = Target(log.NOTHING)
     jot = Telemeter(target)
     spy = mocker.spy(jot.target, "log")
-    jot.debug("test log message", {"nork": 96})
+    jot.debug("test log message", nork=96)
     spy.assert_not_called()
 
 
@@ -90,7 +90,7 @@ def test_ignored_info(mocker):
     target = Target(log.NOTHING)
     jot = Telemeter(target)
     spy = mocker.spy(jot.target, "log")
-    jot.info("test log message", {"nork": 96})
+    jot.info("test log message", nork=96)
     spy.assert_not_called()
 
 
@@ -98,7 +98,7 @@ def test_ignored_warning(mocker):
     target = Target(log.NOTHING)
     jot = Telemeter(target)
     spy = mocker.spy(jot.target, "log")
-    jot.warning("test log message", {"nork": 96})
+    jot.warning("test log message", nork=96)
     spy.assert_not_called()
 
 
@@ -107,35 +107,17 @@ def test_error(jot, mocker):
     try:
         4 / 0
     except ZeroDivisionError as e:
-        jot.error("caught test error", e, {"nork": 96})
+        jot.error("caught test error", e, nork=96)
         spy.assert_called_once_with("caught test error", e, EXPECTED_TAGS, jot.span)
 
 
 def test_magnitude(jot, mocker):
     spy = mocker.spy(jot.target, "magnitude")
-    jot.magnitude("zishy", 105, {"nork": 96})
+    jot.magnitude("zishy", 105, nork=96)
     spy.assert_called_once_with("zishy", 105, EXPECTED_TAGS, jot.span)
 
 
 def test_count(jot, mocker):
     spy = mocker.spy(jot.target, "count")
-    jot.count("zishy", 105, {"nork": 96})
+    jot.count("zishy", 105, nork=96)
     spy.assert_called_once_with("zishy", 105, EXPECTED_TAGS, jot.span)
-
-
-def test_with_span(jot, mocker):
-    cspan = None
-    sspy = None
-    tspy = None
-    with jot.child("subtask", {"nork": 96}) as child:
-        assert len(jot.tags) == 1
-        assert child.target is jot.target
-        assert child.span is not jot.span
-        assert child.tags["plonk"] == 42
-        assert child.tags["nork"] == 96
-        cspan = child.span
-        sspy = mocker.spy(cspan, "finish")
-        tspy = mocker.spy(jot.target, "finish")
-
-    sspy.assert_called_once_with()
-    tspy.assert_called_once_with({"plonk": 42, "nork": 96}, cspan)

@@ -1,6 +1,9 @@
-from .telemeter import Telemeter
-from contextlib import contextmanager as _contextmanager
 import functools
+from contextlib import contextmanager as _contextmanager
+from inspect import Parameter, signature
+import warnings
+
+from .telemeter import Telemeter
 
 active = Telemeter()
 _stack = []
@@ -17,18 +20,18 @@ def _pop():
     active = _stack.pop()
 
 
-def _create_child(name, tagdicts, trace_id=None, parent_id=None):
+def _create_child(name, tags, trace_id=None, parent_id=None):
     if trace_id is None:
-        child = active.start(name, *tagdicts)
+        child = active.start(name, **tags)
     else:
         span = active.target.span(trace_id=trace_id, parent_id=parent_id, name=name)
-        child = Telemeter(active.target, span, *tagdicts)
+        child = Telemeter(active.target, span, **tags)
     return child
 
 
-def init(target, tags={}):
+def init(target, **tags):
     global active, _stack
-    active = Telemeter(target, None, tags)
+    active = Telemeter(target, None, **tags)
     _stack = []
 
 
@@ -42,37 +45,37 @@ def finish(*args, **kwargs):
     _pop()
 
 
-def event(name, *tagdicts):
-    return active.event(name, *tagdicts)
+def event(name, **tags):
+    return active.event(name, **tags)
 
 
-def debug(message, *tagdicts):
-    return active.debug(message, *tagdicts)
+def debug(message, **tags):
+    return active.debug(message, **tags)
 
 
-def info(message, *tagdicts):
-    return active.info(message, *tagdicts)
+def info(message, **tags):
+    return active.info(message, **tags)
 
 
-def warning(message, *tagdicts):
-    return active.warning(message, *tagdicts)
+def warning(message, **tags):
+    return active.warning(message, **tags)
 
 
-def error(message, exc, *tagdicts):
-    return active.error(message, exc, *tagdicts)
+def error(message, exc, **tags):
+    return active.error(message, exc, **tags)
 
 
-def magnitude(name, value, *tagdicts):
-    return active.magnitude(name, value, *tagdicts)
+def magnitude(name, value, **tags):
+    return active.magnitude(name, value, **tags)
 
 
-def count(name, value, *tagdicts):
-    return active.count(name, value, *tagdicts)
+def count(name, value, **tags):
+    return active.count(name, value, **tags)
 
 
 @_contextmanager
-def span(name, *tagdicts, trace_id=None, parent_id=None):
-    child = _create_child(name, tagdicts, trace_id, parent_id)
+def span(name, trace_id=None, parent_id=None, **tags):
+    child = _create_child(name, tags, trace_id, parent_id)
     _push(child)
 
     try:
@@ -85,25 +88,29 @@ def span(name, *tagdicts, trace_id=None, parent_id=None):
         _pop()
 
 
-# this gets called when a generator is defined, at module load time
-def generator(name, *statictags, trace_id=None, parent_id=None):
-
-    # this gets called at runtime to intercept the call to the generator
+def generator(name, **static_tags):
     def decorator(func):
 
-        # we create this wrapper to shuffle active telemeters as
-        # the user code fetches values from the generator
+        # first create the wrapper
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             global active
-            tagdicts = statictags + (kwargs.pop("jot_tags", {}),)
-            captured = _create_child(name, tagdicts, trace_id, parent_id)
 
+            # extract tags from the keyword arguments
+            tags = static_tags.copy()
+            for tag_name in tag_names_to_extract(kwargs):
+                tags[tag_name] = kwargs.pop(tag_name)
+
+            # start a new span, which will be active while the generator is running
+            captured = active.start(name, **tags)
+
+            # run the generator
+            # TODO: log errors raised within the generator
             it = func(*args, **kwargs)
             try:
                 while True:
                     current = active
-                    active = captured              
+                    active = captured
                     val = next(it)
                     active = current
                     yield val
@@ -112,9 +119,65 @@ def generator(name, *statictags, trace_id=None, parent_id=None):
             finally:
                 active = current
 
+        # the @tag decorator will add tag names to this whitelist
+        wrapper._uses_whitelist = False
+        wrapper._whitelist = []
+
+        # introspect on the generator function to figure out how to extract tags
+        sig = signature(func)
+        if _is_positional_only(sig):
+            # the simple case
+            def tag_names_to_extract(kwargs):
+                return list(kwargs.keys())
+
+        elif _has_kwargs(sig):
+            # the generator function can accept any keyword argument, so we only extract
+            # tags based on the whitelist explicitly supplied via the @tag decorator
+            wrapper._uses_whitelist = True
+            def tag_names_to_extract(kwargs):
+                return [n for n in kwargs.keys() if n in wrapper._whitelist]
+
+        else:
+            # the generator function accepts only specific keyword arguments, so we blacklist them
+            # any keyword argument that is not on the blacklist will be treated as a tag
+            blacklist = [p.name for p in sig.parameters.values() if _could_be_keyword(p.kind)]
+            def tag_names_to_extract(kwargs):
+                return [n for n in kwargs.keys() if n not in blacklist]
+
         return wrapper
 
     return decorator
+
+def tag(name):
+    def decorator(func):
+        if not hasattr(func, "_whitelist"):
+            raise RuntimeError(f"{func.__name__}() isn't decorated by jot")
+
+        if not func._uses_whitelist:
+            warnings.warn(f"{func.__name__}() doesn't need tag decorations", UserWarning)
+
+        func._whitelist.append(name)
+        return func
+    return decorator
+
+
+def _could_be_keyword(kind):
+    if kind == Parameter.POSITIONAL_OR_KEYWORD:
+        return True
+    if kind == Parameter.KEYWORD_ONLY:
+        return True
+    if kind == Parameter.VAR_KEYWORD:
+        return True
+    return False
+
+
+def _is_positional_only(sig):
+    return not any(_could_be_keyword(p.kind) for p in sig.parameters.values())
+
+
+def _has_kwargs(sig):
+    return any(p.kind == Parameter.VAR_KEYWORD for p in sig.parameters.values())
+
 
 ### TODO: decorator for coroutines
 ### TODO: decorator for functions

@@ -7,72 +7,58 @@ from .base import Target
 class Telemeter:
     """The instrumentation interface"""
 
-    def __init__(self, target=None, span=None, *tagdicts) -> None:
+    def __init__(self, target=None, span=None, **tags) -> None:
         self.target = target if target is not None else Target()
         self.span = span
-        self.tags = dict()
-        for tags in tagdicts:
-            self.tags.update(tags)
-
-    def _merge(self, tagdicts):
-        tags = self.tags.copy()
-        for d in tagdicts:
-            tags.update(d)
-        return tags
+        self.tags = tags
 
     """Tracing Methods"""
 
-    @contextmanager
-    def child(self, name, *tagdicts):
-        child = self.start(name, *tagdicts)
-        yield child
-        child.finish()
-
-    def start(self, name, *tagdicts):
-        tags = self._merge(tagdicts)
+    def start(self, name, **tags):
+        tags = {**self.tags, **tags}
         span = self.target.start(self.span, name)
-        return Telemeter(self.target, span, tags)
+        return Telemeter(self.target, span, **tags)
 
-    def finish(self, *tagdicts):
+    def finish(self, **tags):
+        tags = {**self.tags, **tags}
         self.span.finish()
-        tags = self._merge(tagdicts)
         self.target.finish(tags, self.span)
 
-    def event(self, name, *tagdicts):
-        tags = self._merge(tagdicts)
+    def event(self, name, **tags):
+        tags = {**self.tags, **tags}
         self.target.event(name, tags, self.span)
 
     """Logging methods"""
 
-    def debug(self, message, *tagdicts):
+    def debug(self, message, **tags):
         if self.target.accepts_log_level(log.DEBUG):
-            tags = self._merge(tagdicts)
+            tags = {**self.tags, **tags}
             self.target.log(log.DEBUG, message, tags, self.span)
 
-    def info(self, message, *tagdicts):
+    def info(self, message, **tags):
         if self.target.accepts_log_level(log.INFO):
-            tags = self._merge(tagdicts)
+            tags = {**self.tags, **tags}
             self.target.log(log.INFO, message, tags, self.span)
 
-    def warning(self, message, *tagdicts):
+    def warning(self, message, **tags):
         if self.target.accepts_log_level(log.WARNING):
-            tags = self._merge(tagdicts)
+            tags = {**self.tags, **tags}
             self.target.log(log.WARNING, message, tags, self.span)
 
     """Error methods"""
 
-    def error(self, message, exception, *tagdicts):
-        tags = self._merge(tagdicts)
+    def error(self, message, exception, **tags):
+        tags = {**self.tags, **tags}
         self.target.error(message, exception, tags, self.span)
 
     """Metrics methods"""
 
-    def magnitude(self, name, value, *tagdicts):
+    def magnitude(self, name, value, **tags):
         # TODO: check that value is a number
-        tags = self._merge(tagdicts)
+        tags = {**self.tags, **tags}
         self.target.magnitude(name, value, tags, self.span)
 
-    def count(self, name, value, *tagdicts):
+    def count(self, name, value, **tags):
         # TODO: check that value is an integer
-        tags = self._merge(tagdicts)
+        tags = {**self.tags, **tags}
         self.target.count(name, value, tags, self.span)
