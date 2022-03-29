@@ -28,9 +28,6 @@ def test_default_constructor_tags(dtags, kwtags, assert_tags_are_correct):
     assert_tags_are_correct
 
 
-(jot)
-
-
 def test_target_constructor():
     target = PrintTarget()
     jot = Telemeter(target)
@@ -46,9 +43,6 @@ def test_target_constructor_tags(dtags, kwtags, assert_tags_are_correct):
     assert_tags_are_correct
 
 
-(jot)
-
-
 def test_span_constructor():
     span = Span(1, 2, 3)
     jot = Telemeter(None, span)
@@ -62,9 +56,6 @@ def test_span_constructor_tags(dtags, kwtags, assert_tags_are_correct):
     assert isinstance(jot.target, Target)
     assert jot.span is span
     assert_tags_are_correct
-
-
-(jot)
 
 
 def test_start(jot):
@@ -115,7 +106,6 @@ def test_event_tags(jot, mocker, dtags, kwtags, child_tags):
     spy = mocker.spy(jot.target, "event")
     jot.event("test-event", dtags, **kwtags)
     spy.assert_called_once_with("test-event", child_tags, jot.span)
-
 
 
 def test_debug(jot, mocker):
