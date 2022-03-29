@@ -30,19 +30,19 @@ class Telemeter:
 
     """Logging methods"""
 
-    def debug(self, message, dtags={}, **tags):
+    def debug(self, message, dtags={}, **kwtags):
         if self.target.accepts_log_level(log.DEBUG):
-            tags = {**self.tags, **dtags, **tags}
+            tags = {**self.tags, **dtags, **kwtags}
             self.target.log(log.DEBUG, message, tags, self.span)
 
-    def info(self, message, dtags={}, **tags):
+    def info(self, message, dtags={}, **kwtags):
         if self.target.accepts_log_level(log.INFO):
-            tags = {**self.tags, **dtags, **tags}
+            tags = {**self.tags, **dtags, **kwtags}
             self.target.log(log.INFO, message, tags, self.span)
 
-    def warning(self, message, dtags={}, **tags):
+    def warning(self, message, dtags={}, **kwtags):
         if self.target.accepts_log_level(log.WARNING):
-            tags = {**self.tags, **dtags, **tags}
+            tags = {**self.tags, **dtags, **kwtags}
             self.target.log(log.WARNING, message, tags, self.span)
 
     """Error methods"""
