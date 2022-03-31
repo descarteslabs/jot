@@ -49,7 +49,6 @@ class ZipkinTarget(Target):
             obj["annotations"] = annotations
 
         payload = [obj]
-        print(payload)
         self._send(payload)
 
 
