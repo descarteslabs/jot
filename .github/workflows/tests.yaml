@@ -22,5 +22,5 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install pdm tox tox-pdm tox-gh-actions
-    - name: Run Tox
+    - name: Run Tests
       run: tox
