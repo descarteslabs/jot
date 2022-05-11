@@ -1,4 +1,4 @@
-name: Unit Tests
+name: unit tests
 
 on:
   pull_request:
@@ -8,6 +8,7 @@ on:
 jobs:
 
   run-tests:
+    name: run tests
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -15,25 +16,25 @@ jobs:
         os: [ubuntu-latest]
     steps:
     - uses: actions/checkout@v1
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: set up python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
+    - name: install dependencies
       run: |
         python -m pip install --upgrade pip
         python -m pip install pdm tox tox-pdm tox-gh-actions
-    - name: Run Tests
+    - name: run tests
       run: tox
-    - name: Upload Results
+    - name: upload results
       if: always()
       uses: actions/upload-artifact@v2
       with:
-        name: Unit Test Results (${{ matrix.os }}, Python ${{ matrix.python-version }})
+        name: unit test results (${{ matrix.os }}, Python ${{ matrix.python-version }})
         path: pytest.xml
 
   publish-test-results:
-    name: "Publish Test Results"
+    name: publish test results
     needs: run-tests
     runs-on: ubuntu-latest
     permissions:
@@ -42,14 +43,12 @@ jobs:
       contents: read
       issues: read
     if: always()
-
     steps:
-      - name: Download Artifacts
+      - name: download artifacts
         uses: actions/download-artifact@v2
         with:
           path: artifacts
-
-      - name: Publish Unit Test Results
+      - name: publish test results
         uses: EnricoMi/publish-unit-test-result-action@v1
         with:
           files: "artifacts/**/*.xml"
