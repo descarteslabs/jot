@@ -1,17 +1,18 @@
 name: Jot Tests
 
 on:
-  push:
+  pull_request:
     branches:
-      - cwp/gha
+      - main
 
 jobs:
-  build:
+
+  run-tests:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python-version: ['3.7', '3.8', '3.9', '3.10']
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest]
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python ${{ matrix.python-version }}
@@ -24,3 +25,31 @@ jobs:
         python -m pip install pdm tox tox-pdm tox-gh-actions
     - name: Run Tests
       run: tox
+    - name: Upload Results
+      if: always()
+      uses: actions/upload-artifact@v2
+      with:
+        name: Unit Test Results (${{ matrix.os }}, Python ${{ matrix.python-version }})
+        path: pytest.xml
+
+  publish-test-results:
+    name: "Publish Test Results"
+    needs: run-tests
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      pull-requests: write
+      contents: read
+      issues: read
+    if: always()
+
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: artifacts
+
+      - name: Publish Unit Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        with:
+          files: "artifacts/**/*.xml"
