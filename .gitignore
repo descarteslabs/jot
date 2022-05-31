@@ -13,6 +13,6 @@ __pypackages__/
 .tox
 pytest.xml
 
-# packaing
+# packaging
 .pdm.toml
 dist/
